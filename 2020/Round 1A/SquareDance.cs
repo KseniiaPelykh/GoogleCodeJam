@@ -3,47 +3,38 @@ using System.Collections.Generic;
 
 public class SquareDance
 {
+    public enum CompetitorType
+    {
+        Right, Left, Above, Below
+    }
+
+    public static int[] CompetitorMirror = new int[4] {1, 0, 3, 2};
+
     public class Dancer
     {
-        public string Id {get;}
+        public string Id { get; }
         public int Value { get; }
-        public Dancer RightCompetitor { get; set; }
-        public Dancer LeftCompetitor { get; set; }
-        public Dancer AboveCompetitor { get; set; }
-        public Dancer BelowCompetitor { get; set; }
+        public Dancer[] Competitors { get; }
 
         public Dancer(string id, int value)
         {
             Id = id;
             Value = value;
+            Competitors = new Dancer[4];
         }
 
         public decimal GetCompetitorsSkillLevel()
         {
             var sum = 0;
             var count = 0;
-            if (RightCompetitor != null)
-            {
-                sum += RightCompetitor.Value;
-                count++;
-            }
 
-            if (LeftCompetitor != null)
+            for (var i = 0; i < 4; i++)
             {
-                sum += LeftCompetitor.Value;
-                count++;
-            }
-
-            if (AboveCompetitor != null)
-            {
-                sum += AboveCompetitor.Value;
-                count++;
-            }
-
-            if (BelowCompetitor != null)
-            {
-                sum += BelowCompetitor.Value;
-                count++;
+                if (Competitors[i] != null)
+                {
+                    sum += Competitors[i].Value;
+                    count++;
+                }
             }
 
             return count != 0 ? (decimal)sum / count : 0;
@@ -77,15 +68,15 @@ public class SquareDance
                     if (i > 0)
                     {
                         var aboveCompetitor = dancers[i - 1, j];
-                        aboveCompetitor.BelowCompetitor = dancer;
-                        dancer.AboveCompetitor = aboveCompetitor;
+                        aboveCompetitor.Competitors[(int)CompetitorType.Below] = dancer;
+                        dancer.Competitors[(int)CompetitorType.Above] = aboveCompetitor;
                     }
 
                     if (j > 0)
                     {
                         var leftCompetitor = dancers[i, j - 1];
-                        leftCompetitor.RightCompetitor = dancer;
-                        dancer.LeftCompetitor = leftCompetitor;
+                        leftCompetitor.Competitors[(int)CompetitorType.Right] = dancer;
+                        dancer.Competitors[(int)CompetitorType.Left] = leftCompetitor;
                     }
 
                     dancers[i, j] = dancer;
@@ -111,35 +102,20 @@ public class SquareDance
                 };
 
                 dancersIds = new HashSet<string>();
-        
+
                 foreach (var dancerId in dancersIdsToRemove)
                 {
                     var coordinates = Array.ConvertAll(dancerId.Split('_'), x => int.Parse(x));
                     var dancer = dancers[coordinates[0], coordinates[1]];
-                    
                     dancersIds.Remove(dancerId);
-                    if (dancer.AboveCompetitor != null)
-                    {
-                        dancer.AboveCompetitor.BelowCompetitor = dancer.BelowCompetitor;
-                        dancersIds.Add(dancer.AboveCompetitor.Id);
-                    };
 
-                    if (dancer.BelowCompetitor != null)
+                    for (var i = 0; i < 4; i++)
                     {
-                        dancer.BelowCompetitor.AboveCompetitor = dancer.AboveCompetitor;
-                        dancersIds.Add(dancer.BelowCompetitor.Id);
-                    };
-
-                    if (dancer.RightCompetitor != null)
-                    {
-                        dancer. RightCompetitor.LeftCompetitor = dancer.LeftCompetitor;
-                        dancersIds.Add(dancer.RightCompetitor.Id);
-                    }
-
-                    if (dancer.LeftCompetitor != null)
-                    {
-                        dancer.LeftCompetitor.RightCompetitor = dancer.RightCompetitor;
-                        dancersIds.Add(dancer.LeftCompetitor.Id);
+                        if (dancer.Competitors[i] != null)
+                        {
+                            dancer.Competitors[i].Competitors[CompetitorMirror[i]] = dancer.Competitors[CompetitorMirror[i]];
+                            dancersIds.Add(dancer.Competitors[i].Id);
+                        }
                     }
                 }
             }
